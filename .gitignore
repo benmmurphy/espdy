@@ -1,0 +1,7 @@
+.eunit
+*.beam
+deps
+ebin
+log
+TEST-*xml
+

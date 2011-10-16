@@ -1,0 +1,1 @@
+-record(espdy_socket, {pid, stream_id}).
