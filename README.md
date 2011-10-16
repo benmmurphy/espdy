@@ -3,10 +3,10 @@
 This project is still very alpha. Enough of the protocol has been implemented to view pages in google chrome. Check out espdy_test_server.erl
 
 #Running
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --use-spdy=ssl
-make compile
-./test_server
-http://localhost:8443
+1. /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --use-spdy=ssl
+2. make compile
+3. ./test_server
+4. http://localhost:8443
 
 # {active, false} socket like API
 This makes the code much more complicated :( and I'm wondering if it is worth having. If you use a callback module or {active, true} style message sending
