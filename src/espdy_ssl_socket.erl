@@ -1,6 +1,6 @@
 -module(espdy_ssl_socket, [Socket]).
 
--export([send/1, close/0, shutdown/0, setopts/1, controlling_process/1, data_tag/0, close_tag/0, error_tag/0]).
+-export([send/1, close/0, shutdown/1, setopts/1, controlling_process/1, data_tag/0, close_tag/0, error_tag/0]).
 
 data_tag() ->
     ssl.
@@ -20,8 +20,8 @@ close() ->
 setopts(Options) ->
     ssl:setopts(Socket, Options).
 
-shutdown() ->
-    ssl:shutdown(Socket).
+shutdown(How) ->
+    ssl:shutdown(Socket, How).
  
 controlling_process(Pid) ->
     ssl:controlling_process(Socket, Pid).
