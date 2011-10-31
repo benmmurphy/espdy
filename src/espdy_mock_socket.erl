@@ -1,6 +1,6 @@
 -module(espdy_mock_socket, [PacketReceiver]).
 
--export([send/1, close/0, shutdown/0, setopts/1, controlling_process/1, data_tag/0, error_tag/0, close_tag/0]).
+-export([send/1, close/0, shutdown/1, setopts/1, controlling_process/1, data_tag/0, error_tag/0, close_tag/0]).
 
 close_tag() ->
     tcp_closed.
@@ -23,7 +23,7 @@ close() ->
 setopts(Options) ->
     ok.
     
-shutdown() ->
+shutdown(_How) ->
     ok.
     
 controlling_process(Pid) ->
