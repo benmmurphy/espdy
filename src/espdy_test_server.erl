@@ -3,12 +3,58 @@
 
 -export([start/0]).
 
+http_headers(Socket, Request, Headers) ->
+    case gen_tcp:recv(Socket, 0) of
+        {ok, {http_header, _, Field, _, Value}} ->
+            lager:info("Received ~p ~p", [Field, Value]),
+            http_headers(Socket, Request, Headers);
+        {ok, http_eoh} ->
+            ok
+    end.
+
+http_reply(Socket) ->
+    Content = html_page(),
+ 
+    Resp = [<<"HTTP/1.1 200 OK\r\n"
+              "Alternate-Protocol: 443:npn-spdy/2\r\n"
+              "Content-Length: ">>, integer_to_list(byte_size(Content)), <<"\r\n"
+              "\r\n">>, Content],
+
+    gen_tcp:send(Socket, Resp).
+
+process_http(Socket) ->
+    case gen_tcp:recv(Socket, 0) of
+        {ok, {http_request, Method, Path, Version} = Request} ->
+            http_headers(Socket, Request, []),
+            http_reply(Socket)
+    end.
+
+http_loop(Socket) ->
+    case gen_tcp:accept(Socket) of
+        {ok, ClientSocket} ->
+            spawn(fun() -> http_loop(Socket) end),
+            process_http(ClientSocket);
+        {error, Reason} ->
+            ok % stop listenting
+    end.
+
+
+start_http() ->
+    {ok, Listen} = gen_tcp:listen(8080, [
+        {packet, http},
+        {active, false}]
+    ),
+    spawn(fun() -> http_loop(Listen) end).
+
+    
 start() ->
     lager:start(),
     lager:set_loglevel(lager_console_backend, debug),
+    start_http(),
     crypto:start(),
     ssl:start(),
-    {ok, Listen} = ssl:listen(8443, [
+    {ok, Listen} = ssl:listen(443, [
+        {next_protocols_advertised, [<<"spdy/2">>, <<"http/1.0">>, <<"http/1.1">>]},
         {keyfile, "server.key"}, 
         {certfile, "server.crt"},
         {reuseaddr, true},
@@ -18,7 +64,7 @@ start() ->
         {active, false}
     ]),
     
-    lager:info("Listening on port 80", []),
+    lager:info("Listening on port 443", []),
     
     loop(Listen).
     
@@ -65,6 +111,10 @@ espdy_accept(Socket, Headers) ->
    
     
     case get_header(<<"url">>, Headers) of
+        {ok, <<"/foo">>} ->
+            espdy_server:send_headers(Socket, ResponseHeaders),
+            espdy_server:send(Socket, ajax_response()),
+            espdy_server:close(Socket);
         {ok, <<"/style.css">>} ->
             timer:sleep(1000),
             espdy_server:send_headers(Socket, ResponseHeaders),
@@ -90,6 +140,9 @@ espdy_accept(Socket, Headers) ->
             espdy_server:close(Socket)
     end.
 
+ajax_response() ->
+    <<"{'response_from_spdy' : 'true'}">>.
+ 
 simple_header({Name, Value}) ->
     {Name, [Value]}.
     
